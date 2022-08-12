@@ -4,6 +4,9 @@
   "description": "",
   "main": "server.ts",
   "type": "module",
+  "engines": {
+    "node": "18.2.0"
+  },
   "scripts": {
     "client": "npm run dev --prefix client",
     "server": "nodemon --ignore 'client/'",
