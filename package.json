@@ -11,8 +11,8 @@
     "client": "npm run dev --prefix client",
     "server": "nodemon --ignore 'client/'",
     "dev": "concurrently \"npm run server\" \"npm run client\" ",
-    "start-ts": "ts-node server",
-    "start": "tsc && node server",
+    "start": "ts-node server",
+    "start-old": "tsc && node server",
     "build": "npm install --prefix client && npm run build --prefix client"
   },
   "keywords": [],
