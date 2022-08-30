@@ -1,92 +1,81 @@
-<script lang="ts">
-	import { transactions, sortedTransactions, balance, income, expenses, addTrans, fetchTransactions, deleteTransaction } from "./stores";
+<script>
 	import axios from "axios";
+
 	import { onMount } from "svelte";
+
+	import Router, { push } from "svelte-spa-router";
+	import { wrap } from "svelte-spa-router/wrap";
 	import Loading from "./components/Loading.svelte";
-	import SummaryCard from "./components/SummaryCard.svelte";
-	import Transaction from "./components/Transaction.svelte";
+	import Navbar from "./components/Navbar.svelte";
+	import Dashboard from "./pages/Dashboard.svelte";
+	import Home from "./pages/Home.svelte";
+	import Login from "./pages/Login.svelte";
+import Profile from "./pages/Profile.svelte";
+	import Signup from "./pages/Signup.svelte";
+	import { user } from "./stores";
 
-	let input = 0;
-	let typeOfTRansaction = "+";
-	let loading = false;
-
-	$: disabled = !input;
-
+	let loading = true;
 	onMount(async () => {
-		loading = true;
-		const isFinished = fetchTransactions()
-		loading = !isFinished;
+		const { data } = await axios.get("api/auth/user");
+		const $user = data.user;
+		loading = false;
 	});
 
-	async function addTransaction() {
-		const transaction = {
-			date: new Date().getTime(),
-			value: typeOfTRansaction === "+" ? input : input * -1,
-		};
-		
-		if (addTrans(transaction)) {
-			input = 0;
+	const routes = {
+		// "/": wrap(Home, { reason: "authenticated" }, () => !$user),
+		"/": wrap({
+			component: Home,
+			userData: { reason: "authenticated" },
+			conditions: () => !$user,
+		}),
+		"/dashboard": wrap({
+			component: Dashboard,
+			userData: { reason: "unauthenticated" },
+			conditions: () => $user,
+		}),
+		"/signup": wrap({
+			component: Signup,
+			userData: { reason: "authenticated" },
+			conditions: () => !$user,
+		}),
+		"/login": wrap({
+			component: Login,
+			userData: { reason: "authenticated" },
+			conditions: () => !$user,
+		}),
+		"/profile": wrap({
+			component: Profile,
+			userData: { reason: "unauthenticated" },
+			conditions: () => $user,
+		}),
+	};
+
+	function conditionsFailed(event) {
+		const { reason } = event.detail.userData;
+		switch (reason) {
+			case "unauthenticated":
+				return push("/login");
+			case "authenticated":
+				return push("/dashboard");
 		}
 	}
-
 </script>
 
-<div class="app container">
-	<div class="field has-addons">
-		<p class="control">
-			<span class="select">
-				<select bind:value={typeOfTRansaction}>
-					<option value="+">+</option>
-					<option value="-">-</option>
-				</select>
-			</span>
-		</p>
-		<p class="control">
-			<input
-				class="input"
-				type="number"
-				min="0"
-				bind:value={input}
-				placeholder="Amount of money"
-			/>
-		</p>
-		<p class="control">
-			<button on:click={addTransaction} class="button" {disabled}>
-				Save
-			</button>
-		</p>
-	</div>
-
-	<hr />
-
-	{#if loading}
+{#if loading}
+	<div class="loading-container">
 		<Loading />
-	{/if}
-
-	{#if $transactions.length > 0}
-		<SummaryCard value={$balance} mode="balance" />
-
-		<div class="columns">
-			<div class="column">
-				<SummaryCard value={$income} mode="income" />
-			</div>
-			<div class="column">
-				<SummaryCard value={$expenses} mode="expenses" />
-			</div>
-		</div>
-	{:else if !loading}
-		<div class="notification">Add your firt transaction</div>
-	{/if}
-
-	<hr />
-	{#each $sortedTransactions as transaction (transaction._id)}
-		<Transaction {transaction} {deleteTransaction} />
-	{/each}
-</div>
+	</div>
+{:else}
+	<Navbar />
+	<Router {routes} on:conditionsFailed={conditionsFailed} />
+{/if}
 
 <style>
-	.app.container {
-		margin: 40px auto;
+	.loading-container {
 		max-width: 500px;
+		display: flex;
+		min-height: 100vh;
+		align-content: center;
+		margin: auto;
 	}
 </style>

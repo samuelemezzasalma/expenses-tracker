@@ -24,6 +24,7 @@
     "validate": "svelte-check"
   },
   "dependencies": {
-    "axios": "^0.27.2"
+    "axios": "^0.27.2",
+    "svelte-spa-router": "^3.3.0"
   }
 }

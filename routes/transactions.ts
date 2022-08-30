@@ -1,18 +1,27 @@
 // const Transaction = require("../models/transaction")
 // const Router = require("express")
 
-import { Router } from "express"
-import { Transaction } from "../models/transaction"
+import { Request, RequestHandler, Response, Router } from "express"
+import { Transaction, TransactionDocument } from "../models/transaction"
+import { UserDocument } from "../models/user"
 
 const transactionsRoutes = Router()
+
+function ensureLogin(req: Request, res: Response, next) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).send({message: 'Not authenticated'})
+  }
+  next()
+}
 
 /**
  * Homepage
  * get all transactions
  */
-transactionsRoutes.get('/', async (req: any, res: any) => {
+transactionsRoutes.get('/', ensureLogin, async (req: Request, res: Response) => {
   try {
-    const transactions = await Transaction.find()
+    const user: UserDocument = <UserDocument>req.user
+    const transactions = await Transaction.find({user_id: user._id}).exec()
     if (!transactions) {
       throw new Error('No transactions')
     }
@@ -26,9 +35,10 @@ transactionsRoutes.get('/', async (req: any, res: any) => {
  * 
  * Add a new transaction
  */
-transactionsRoutes.post('/', async (req: any, res: any) => {
+transactionsRoutes.post('/', ensureLogin, async (req: Request, res: Response) => {
   const { value, date } = req.body
-  const newTRansaction = new Transaction({ value, date })
+  const user: UserDocument = <UserDocument>req.user
+  const newTRansaction = new Transaction({ value, date, user_id: user._id })
   try {
     const transaction = await newTRansaction.save()
     if (!transaction) {
@@ -41,12 +51,16 @@ transactionsRoutes.post('/', async (req: any, res: any) => {
 
 })
 
-transactionsRoutes.delete('/:id', async (req, res) => {
+transactionsRoutes.delete('/:id', ensureLogin, async (req: Request, res: Response) => {
   const { id } = req.params
+  const user: UserDocument = <UserDocument>req.user
   try {
-    const transaction = Transaction.findById(id)
+    const transaction = await Transaction.findById<TransactionDocument>(id)
     if (!transaction) {
       throw new Error("No transaction was found");
+    }
+    if (transaction.user_id !== new String(user._id)) {
+      res.status(403).json({message: 'Unauthorized'})
     }
     const removed = await transaction.remove()
     if (!removed) {

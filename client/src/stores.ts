@@ -1,11 +1,19 @@
 import axios from 'axios';
 import { derived, writable, Writable } from 'svelte/store';
 
-interface Transaction {
+export interface Transaction {
   _id?: number;
   date: number;
   value: number;
 }
+
+export interface User {
+  _id?: number;
+  username: string;
+  password: string;
+}
+
+export const user = writable<User>(null)
 
 export const transactions = writable<Transaction[]>([])
 

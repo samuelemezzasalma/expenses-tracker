@@ -1,4 +1,12 @@
-import mongoose from "mongoose"
+import mongoose, { Model, Document } from "mongoose"
+
+export interface TransactionDocument extends Document {
+  value: number
+  date: number
+  user_id: string
+}
+
+interface TransactionModel extends Model<TransactionDocument> {}
 
 const now = new Date().getTime()
 
@@ -11,7 +19,11 @@ const TransactionSchema = new mongoose.Schema({
     type: Number,
     default: now,
   },
+  user_id: {
+    type: String,
+    required: true
+  }
 })
 
-export const Transaction = mongoose.model('transaction', TransactionSchema)
+export const Transaction: TransactionModel = mongoose.model<TransactionDocument>('transaction', TransactionSchema)
 
